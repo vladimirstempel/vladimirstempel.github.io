@@ -1,7 +1,8 @@
 import { ChangeEvent, FC, useRef, useState } from "react";
-import { getOutlines, mergeOutlines } from "../utils/pdf/outlines.ts";
+import { getOutlines } from "../utils/pdf/outlines.ts";
 import { PDFDocument } from "pdf-lib";
 import { PDFOutline } from "../utils/pdf/outlines.type.ts";
+import { mergePdf } from "../utils/pdf/merge.ts";
 
 interface ToolbarProps {
     pdf: PDFDocument;
@@ -31,6 +32,8 @@ export const Toolbar: FC<ToolbarProps> = ({ pdf, setOutlineList, setPageCount })
         if (uploadedPdf) {
             await mergePdf(pdf!, uploadedPdf);
 
+            setPageCount(pdf!.getPageIndices().length);
+
             setMerged(true);
             setOutlineList(getOutlines(pdf!));
         }
@@ -48,21 +51,6 @@ export const Toolbar: FC<ToolbarProps> = ({ pdf, setOutlineList, setPageCount })
 
         e.target.value = '';
     }
-
-    const mergePdf = async (target: PDFDocument, ...sourcePdfs: PDFDocument[]): Promise<void> => {
-        for (const item of sourcePdfs) {
-            const targetLastPageNumber = target.getPageIndices().length;
-
-            const pages = await target.copyPages(item, item.getPageIndices());
-            pages.forEach(page => target.addPage(page));
-
-            mergeOutlines(target, getOutlines(item), targetLastPageNumber);
-
-            setOutlineList(getOutlines(target));
-        }
-
-        setPageCount(target.getPageIndices().length);
-    };
 
     return (<>
         <div className="pdf-names">

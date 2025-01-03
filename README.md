@@ -27,7 +27,7 @@ Use the `getOutlines` function to extract and parse outlines from a PDF document
 
 ```typescript
 import { PDFDocument } from 'pdf-lib';
-import { getOutlines } from './utils/pdf-utils';
+import { getOutlines } from './utils/pdf/outlines';
 
 const pdfDoc = await PDFDocument.load(pdfBytes);
 const outlines = getOutlines(pdfDoc);
@@ -40,21 +40,21 @@ Use the `setOutline` function to set custom outlines for a PDF document:
 
 ```typescript
 import { PDFDocument } from 'pdf-lib';
-import { setOutline, PDFOutline } from './utils/pdf-utils';
+import { setOutline, PDFOutline } from './utils/pdf/outlines';
 
 const pdfDoc = await PDFDocument.load(pdfBytes);
 
 const outlines: PDFOutline[] = [
-  {
-    title: 'Chapter 1',
-    to: 0, // Page index
-    bold: true,
-    children: [
-      { title: 'Section 1.1', to: 1 },
-      { title: 'Section 1.2', to: 2, italic: true },
-    ],
-  },
-  { title: 'Chapter 2', to: 3 },
+    {
+        title: 'Chapter 1',
+        to: 0, // Page index
+        bold: true,
+        children: [
+            { title: 'Section 1.1', to: 1 },
+            { title: 'Section 1.2', to: 2, italic: true },
+        ],
+    },
+    { title: 'Chapter 2', to: 3 },
 ];
 
 await setOutline(pdfDoc, outlines);
@@ -67,13 +67,30 @@ Combine outlines from two PDFs while adjusting page references:
 
 ```typescript
 import { PDFDocument } from 'pdf-lib';
-import { mergeOutlines } from './utils/pdf-utils';
+import { mergeOutlines } from './utils/pdf/outlines';
 
 const targetPdf = await PDFDocument.load(targetPdfBytes);
 const sourcePdf = await PDFDocument.load(sourcePdfBytes);
 
 const sourceOutlines = getOutlines(sourcePdf);
 mergeOutlines(targetPdf, sourceOutlines, targetPdf.getPageCount());
+
+const mergedPdfBytes = await targetPdf.save();
+```
+
+### Merge PDFs
+
+Merge multiple PDFs into a target PDF, preserving and merging their outlines:
+
+```typescript
+import { PDFDocument } from 'pdf-lib';
+import { mergePdf } from './utils/pdf/merge';
+
+const targetPdf = await PDFDocument.load(targetPdfBytes);
+const sourcePdf1 = await PDFDocument.load(sourcePdf1Bytes);
+const sourcePdf2 = await PDFDocument.load(sourcePdf2Bytes);
+
+await mergePdf(targetPdf, sourcePdf1, sourcePdf2);
 
 const mergedPdfBytes = await targetPdf.save();
 ```
@@ -107,6 +124,17 @@ Merges outlines from a source PDF into a target PDF.
 - `outlines: PDFOutline[]` - The outlines from the source PDF.
 - `offset: number` - The page offset to apply to the outlines being merged.
 
+### `mergePdf`
+
+Merges multiple source PDFs into a target PDF, preserving and merging their outlines.
+
+**Parameters:**
+- `target: PDFDocument` - The target PDF document.
+- `...sourcePdfs: PDFDocument[]` - The source PDFs to merge into the target.
+
+**Returns:**
+- `Promise<void>` - A promise that resolves when the merge is complete.
+
 ## Types
 
 ### `PDFOutline`
@@ -117,16 +145,16 @@ Represents an outline item.
 type PDFOutlineTo = number | [pageIndex: number, xPercentage: number, yPercentage: number];
 
 interface PDFOutlineItem {
-  title: string;
-  to: PDFOutlineTo;
-  italic?: boolean;
-  bold?: boolean;
+    title: string;
+    to: PDFOutlineTo;
+    italic?: boolean;
+    bold?: boolean;
 }
 
 interface PDFOutlineItemWithChildren extends Omit<PDFOutlineItem, 'to'> {
-  to?: PDFOutlineTo;
-  children: PDFOutline[];
-  open: boolean;
+    to?: PDFOutlineTo;
+    children: PDFOutline[];
+    open: boolean;
 }
 
 type PDFOutline = PDFOutlineItem | PDFOutlineItemWithChildren;
