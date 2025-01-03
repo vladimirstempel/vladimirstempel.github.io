@@ -41,6 +41,14 @@
   color: #888;
 }
 
+.pdf-names {
+  text-align: left;
+
+  p:first-of-type {
+    text-align: center;
+  }
+}
+
 .button-group {
   display: flex;
   justify-content: center;

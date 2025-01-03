@@ -23,7 +23,7 @@ export const Toolbar: FC<ToolbarProps> = ({ pdf, setOutlineList, setPageCount })
 
         const a = document.createElement('a');
         a.href = fileUrl;
-        a.download = 'res.pdf';
+        a.download = 'result.pdf';
         a.click();
     };
 
@@ -64,7 +64,12 @@ export const Toolbar: FC<ToolbarProps> = ({ pdf, setOutlineList, setPageCount })
         setPageCount(target.getPageIndices().length);
     };
 
-    return (
+    return (<>
+        <div className="pdf-names">
+            <p>PDFs loaded:</p>
+            <p>1. {pdf?.getTitle()}</p>
+            { uploadedPdf && <p>2. {uploadedPdf?.getTitle()}</p>}
+        </div>
         <div className="button-group">
             <button
                 onClick={() => !uploadedPdf && triggerUploadPdf()}>{!uploadedPdf ? 'Upload PDF' : 'Uploaded'}</button>
@@ -72,5 +77,5 @@ export const Toolbar: FC<ToolbarProps> = ({ pdf, setOutlineList, setPageCount })
             {merged && <button onClick={() => handleDownloadPdf()}>Download Final PDF</button>}
             <input className='hidden' type="file" accept='application/pdf' onChange={handleUpload} ref={uploadRef}/>
         </div>
-    );
+    </>);
 }
