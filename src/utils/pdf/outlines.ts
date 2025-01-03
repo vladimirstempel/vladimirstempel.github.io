@@ -242,3 +242,43 @@ const parseOutline = (pdfDoc: PDFDocument, current: PDFObject): PDFOutline[] => 
 
     return bookmarks;
 };
+
+/**
+ * Merges outlines (bookmarks) from one PDF into another, adjusting the page offsets for the new outlines.
+ *
+ * @param {PDFDocument} target - The target PDF document to which the outlines will be merged.
+ * @param {PDFOutline[]} outlines - The array of outlines (bookmarks) to merge into the target document.
+ * @param {number} offset - The page offset to apply to the outlines being merged. This is used to adjust
+ * page references to account for the target document's existing pages.
+ */
+export const mergeOutlines = (target: PDFDocument, outlines: PDFOutline[], offset: number): void => {
+    // Retrieve the existing outlines from the target document
+    const targetOutlines = getOutlines(target);
+
+    /**
+     * Recursively adjusts the page references in the outlines by applying the offset.
+     *
+     * @param {PDFOutline} outline - An individual outline to adjust.
+     * @returns {PDFOutline} A new outline object with adjusted page references.
+     */
+    const handleOffset = (outline: PDFOutline): PDFOutline => {
+        if ('children' in outline) {
+            // Recursively handle nested outlines
+            return ({
+                ...outline,
+                children: outline.children.map(handleOffset)
+            });
+        }
+        // Adjust the page reference by adding the offset
+        return ({
+            ...outline,
+            to: (Number(outline.to) + offset)
+        })
+    };
+
+    // Apply the offset to all incoming outlines
+    outlines = outlines.map(handleOffset);
+
+    // Merge the adjusted outlines with the target document's existing outlines
+    setOutline(target, targetOutlines.concat(outlines));
+}
