@@ -1,4 +1,4 @@
-import { PDFDocument, PDFRef, PDFString } from 'pdf-lib'
+import { PDFArray, PDFDocument, PDFName, PDFObject, PDFRef, PDFString } from 'pdf-lib'
 
 // --- Outline ---
 
@@ -155,3 +155,61 @@ export const setOutline = async (
 
     doc.catalog.set(doc.context.obj('Outlines'), rootRef)
 }
+
+export const getOutlines = (pdfDoc: PDFDocument): PDFOutline[] => {
+    const catalog = pdfDoc.context.lookup(pdfDoc.catalog)!;
+    const outlinesRef = catalog.get(PDFName.of('Outlines'));
+    if (!outlinesRef) return [];
+
+    const outlines = pdfDoc.context.lookup(outlinesRef)!;
+    const firstOutlineRef = outlines.get(PDFName.of('First'));
+
+    return parseOutline(pdfDoc, firstOutlineRef);
+};
+
+// Recursive function to handle nested bookmarks
+const parseOutline = (pdfDoc: PDFDocument, current: PDFObject): PDFOutline[] => {
+    const bookmarks: PDFOutline[] = [];
+
+    while (current) {
+        const bookmark: PDFObject = pdfDoc.context.lookup(current)!;
+        const dest = bookmark.get(PDFName.of('Dest'));
+        let pageIndex = null;
+
+        if (dest && dest instanceof PDFArray) {
+            const pageRef = dest.get(0);
+            if (pageRef) {
+                pageIndex = pdfDoc.getPageIndices().find(index => {
+                    return pdfDoc.getPage(index).ref === pageRef;
+                });
+            }
+        }
+
+
+        // Extract styles (italic/bold) from the bookmark
+        const flags = bookmark.get(PDFName.of('F'));
+        const italic = (flags & 1) !== 0;
+        const bold = (flags & 2) !== 0;
+
+        const title = bookmark.get(PDFName.of('Title')).decodeText();
+        const childrenRef = bookmark.get(PDFName.of('First'));
+        const children = childrenRef ? parseOutline(pdfDoc, childrenRef) : [];
+
+        const bookmarkData: PDFOutline = {
+            title,
+            to: pageIndex,
+            bold,
+            italic
+        };
+
+        if (children?.length) {
+            bookmarkData.children = children;
+        }
+
+        bookmarks.push(bookmarkData);
+
+        current = bookmark.get(PDFName.of('Next')); // Move to the next sibling
+    }
+
+    return bookmarks;
+};

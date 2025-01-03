@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react'
 import './App.css'
 import { PDFDocument } from 'pdf-lib'
-import { setOutline } from './utils/pdf'
+import { getOutlines, setOutline } from './utils/pdf'
 
 function App() {
     const [pdf, setPdf] = useState<PDFDocument | null>(null)
@@ -58,6 +58,7 @@ function App() {
 
         await setOutline(pdf!, outlines);
 
+        console.log('EXTRACT_BOOKMARKS:', getOutlines(pdf!));
         const arrayBuffer: ArrayBuffer = await pdf!.save()
         setPdfRes(arrayBuffer);
     };
